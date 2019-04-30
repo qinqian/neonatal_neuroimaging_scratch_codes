@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+
+import os
+import fire
+from utils import pipeline
+import pandas as pd
+import numpy as np
+
+class Main(object):
+    """
+    main
+    """
+    def run(self, bids, clinical, candidate, output, backend=None, template=None):
+        #clin = pd.read_table(clinical)
+        info = pd.read_table(candidate)
+        # info.iloc[:, 1] = info.iloc[:, 1].map(lambda x: os.path.join(bids, "sub-%s" % x))
+        t1 = info.apply(lambda x:  "%s/%s/source/sub-%s/anat/sub-%s_run-01_T1w.nii.gz" %  (bids, x[2], x[1], x[1]), axis=1)
+        t2 = info.apply(lambda x:  "%s/%s/source/sub-%s/anat/sub-%s_run-01_T2w.nii.gz" %  (bids, x[2], x[1], x[1]), axis=1)
+        t2w = info.apply(lambda x: "%s/%s/source/sub-%s/anat/sub-%s_run-02_T2w.nii.gz" %  (bids, x[2], x[1], x[1]), axis=1)
+        adc = info.apply(lambda x: "%s/%s/source/sub-%s/dwi/sub-%s_run-02_dwi.nii.gz"  %  (bids, x[2], x[1], x[1]), axis=1)
+        dwi = info.apply(lambda x: "%s/%s/source/sub-%s/dwi/sub-%s_run-01_dwi.nii.gz"  %  (bids, x[2], x[1], x[1]), axis=1)
+        bval = info.apply(lambda x:"%s/%s/source/sub-%s/dwi/sub-%s_run-01_dwi.bval"    %  (bids, x[2], x[1], x[1]), axis=1)
+
+        info = info.loc[t1.map(os.path.exists) & t2.map(os.path.exists) & t2w.map(os.path.exists) & adc.map(os.path.exists) & dwi.map(os.path.exists) & bval.map(os.path.exists), :]
+        info = info.iloc[[0,4], :]
+        print(info)
+        return
+
+        p = pipeline(bids, info.participant_id.values.reshape(-1).astype('str'),
+                     info.group.values.reshape(-1).astype('str'), 
+                     info.ID.values.reshape(-1).astype('str'), 
+                     output)
+        #p.write_graph(graph2use='colored', dotfilename='./graph_hierarchical.dot')
+
+        if backend == "sge":
+            res = p.run('SGEGraph', plugin_args={'dont_resubmit_completed_jobs': True,
+                                                 'qsub_args': ' -q {} '.format('normal.q'),
+                                                 'template': template})
+        elif backend == "pbs":
+           # p.config['execution']['poll_sleep_duration'] = 10
+            res = p.run('PBSGraph', plugin_args={'dont_resubmit_completed_jobs': True, 'template': template})
+        elif backend == 'p':
+            res = p.run('MultiProc', plugin_args={'n_procs': 20})
+            #res = p.run()
+        else:
+            print(p)
+
+        #for i in res.nodes():
+        #    print(i.result.outputs)
+
+if __name__ == "__main__":
+    fire.Fire(Main)
+

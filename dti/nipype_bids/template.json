@@ -1,0 +1,21 @@
+{
+    "template_t1": "/home/qinqian/data1/MRI/data/Atlas/Regionalgrowth_and_atlas_Consistent_High_definition_Spatio-tempora/NeonatalAtlas2/template_T1.nii.gz",
+    "template_t2": "/home/qinqian/data1/MRI/data/Atlas/Regionalgrowth_and_atlas_Consistent_High_definition_Spatio-tempora/NeonatalAtlas2/template_T2.nii.gz",
+    "template_seg6": "/home/qinqian/data1/MRI/data/Atlas/Regionalgrowth_and_atlas_Consistent_High_definition_Spatio-tempora/NeonatalAtlas2",
+    "template_segs": "/home/qinqian/data1/MRI/data/Atlas/Regionalgrowth_and_atlas_Consistent_High_definition_Spatio-tempora/NeonatalStructuralAtlas/atlas{}/{}.nii.gz",
+
+    "jhu_b0": "/data1/qinqian/MRI/data/Atlas/jhu_atlas_neonate/nii/JHU_neonate_SS_b0ss.nii.gz",
+
+    "jhu_t1": "/data1/qinqian/MRI/data/Atlas/jhu_atlas_neonate/nii/JHU_neonate_SS_T1.nii.gz",
+    "jhu_atlas": "/data1/qinqian/MRI/data/Atlas/jhu_atlas_neonate/nii/JHU_neonate_SS_122parcellation.nii.gz",
+
+    "albert_t1": "/data1/qinqian/MRI/data/Atlas/ALBERT/original/original/images/{}_T1.nii",
+    "albert_t2": "/data1/qinqian/MRI/data/Atlas/ALBERT/original/original/images/{}_T2.nii",
+    "albert_seg": "/data1/qinqian/MRI/data/Atlas/ALBERT/original/original/segmentations/ALBERT_{}_ISG_seg50.nii",
+    "albert_meta": "/data1/qinqian/MRI/data/Atlas/ALBERT/original/original/ALBERT_GA_AgeAtScan.xls",
+
+    "dhcp_albert": "/data1/qinqian/MRI/software/dhcp-structural-pipeline/atlases",
+
+    "zhang_template_t1": "/home/qinqian/data1/MRI/data/Atlas/Regionalgrowth_and_atlasing_of_the_developing_human_brain/NeonatalAtlas2/template_T2.nii.gz",
+    "zhang_template_t2": "/home/qinqian/data1/MRI/data/Atlas/Regionalgrowth_and_atlasing_of_the_developing_human_brain/NeonatalAtlas2/template_T2.nii.gz"
+}

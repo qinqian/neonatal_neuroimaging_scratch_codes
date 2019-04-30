@@ -1,0 +1,16 @@
+#!/bin/bash -ex
+
+#PBS -l nodes=1:ppn=1
+#PBS -N ants
+#PBS -q q1
+#PBS -o /cluster/home/qinqian/SMN/batch_mode/log/${PBS_JOBNAME}_${PBS_JOBID}.log
+#PBS -e /cluster/home/qinqian/SMN/batch_mode/log/${PBS_JOBNAME}_${PBS_JOBID}.err
+#PBS -l walltime=20:00:00
+
+cd $PBS_O_WORKDIR
+
+n=${PBS_ARRAYID}
+
+#nii/1__iso_1mm_merge_chan.nii.gz
+time Rscript normalize.R nii/${n}__iso_1mm_merge_chan.nii.gz
+
