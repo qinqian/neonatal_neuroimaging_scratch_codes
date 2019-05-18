@@ -2,13 +2,10 @@ library(ANTsR)
 library(gdata)
 library(foreach)
 library(doMC)
+setwd("/home/qinqian/data1/MRI/01_PVL_AI/scripts/models/pytorch")
 
-## control <- read.table("/data1/qinqian/MRI/01_PVL_AI/data/Shanghai/control_patient_id.txt")
-## control <- cbind(control, dir=paste0("/data1/qinqian/MRI/01_PVL_AI/data/Shanghai/cont/source/sub-", control[,1]))
-## pvl <- read.table("/data1/qinqian/MRI/01_PVL_AI/data/Shanghai/pvl_patient_id.txt")
-## pvl <- cbind(pvl, dir=paste0("/data1/qinqian/MRI/01_PVL_AI/data/Shanghai/pvl/source/sub-", pvl[,1]))
-
-getnii <- function(x) {
+getnii <- function(x, directory) {
+    x[1] = paste0(directory, '/', x[1])
     t1 <- Sys.glob(paste0(x[1], '/anat/*run-01_T1w.nii.gz'))
     if (length(t1)==0)
         t1=NA
@@ -27,20 +24,20 @@ getnii <- function(x) {
     return(c(t1, t1s, t2f, t2, dwi))
 }
 
-genetics <- read.table("../genetics/genetics_patient_id.txt", stringsAsFactors=F, sep='\t')
-new.seq <- read.table("../new_sequence/new_sequence_patient_id.txt", sep='\t', stringsAsFactors=F)
-shanghai <- read.table("../data/shanghai_patient_id.txt", stringsAsFactors=F, sep='\t')
-xiamen <- read.table("../data/xiamen_patient_id.txt", stringsAsFactors=F, sep='\t')
+genetics <- read.table("../../../genetics/genetics_patient_id.txt", stringsAsFactors=F, sep='\t')
+new.seq <- read.table("../../../new_sequence/new_sequence_patient_id.txt", sep='\t', stringsAsFactors=F)
+shanghai <- read.table("../../../data/shanghai_patient_id.txt", stringsAsFactors=F, sep='\t')
+xiamen <- read.table("../../../data/xiamen_patient_id.txt", stringsAsFactors=F, sep='\t')
 
 bids <- rbind(genetics, new.seq, shanghai, xiamen)
 print(head(bids))
+
 ## remove redundandancy datasets
 bids <- bids[!duplicated(cbind(bids$V4, bids$V5, bids$V6)), ]
 table(paste0(bids[,10]," ", bids[, 11], " ", bids[, 12]))
 
-files <- t(apply(matrix(bids[,1]), 1, getnii))
-
-bids <- cbind(bids,files)
+files <- t(apply(matrix(bids[,1]), 1, getnii, '../..'))
+bids <- cbind(bids, files)
 
 dim(cbind(bids$V3, bids$V4, bids$V5))
 dim(unique(cbind(bids$V3, bids$V4, bids$V5)))
@@ -57,8 +54,10 @@ get_age <- function(x) {
         return(as.numeric(gsub("Y", "", x)) * 52)
 }
 
-age <- apply(matrix(bids[,7]), 1, get_age)
-bids <- bids[age<53,]
+bids <- bids[complete.cases(bids),]
+
+bids[,7] = apply(matrix(bids[,7]), 1, get_age)
+bids <- bids[bids[,7]<=52,]
 
 clinical.report <- read.xls("/data1/qinqian/MRI/Annotations/patient_information/新生儿颅脑MR.xls", header=T, stringsAsFactors=F)
 xiamen.report <- read.delim("/data1/qinqian/MRI/01_PVL_AI/data/Xiamen/meta/MRI_xiamen_autoclean_newline.tsv", header=T, stringsAsFactors=F, as.is=T, quote="")
@@ -72,14 +71,10 @@ reports[!is.na(sh.reports)] = sh.reports[!is.na(sh.reports)]
 
 select <- reports!=""
 reports <- reports[select]
-
 bids = bids[select,]
-
-niis <- bids[,14:ncol(bids)]
-colnames(niis) <-  c('t1', 't1s', 't2f', 't2', 'dwi')
-
-apply(niis, 2, function(x) {return(sum(!is.na(x)))})
-sum(rowSums(!is.na(niis))>=5)
+colnames(bids)[14:ncol(bids)] <-  c('t1', 't1s', 't2f', 't2', 'dwi')
+## apply(niis, 2, function(x) {return(sum(!is.na(x)))})
+## sum(rowSums(!is.na(niis))>=5)
 
 cooccurence.mat <- function(symptom) {
     mat <- matrix(0, nrow=length(symptom), ncol=length(symptom))
@@ -96,22 +91,32 @@ cooccurence.mat <- function(symptom) {
 
 #labelsi <- c("囊", "软化", "出血|积血", "血肿", "髓鞘|发育", "扩张", "损伤")
 labelsi <- c("囊", "软化", "出血|积血", "髓鞘|发育", "扩张", "损伤")
+## labelsi <- c("Cyst", "Leukomalacia", "Hemorrhage", "Myelin or Develop", "Expansion", "Lesion")
 result.comat <- cooccurence.mat(labelsi)
 
 colnames(result.comat) <- c("Cyst", "Leukomalacia", "Hemorrhage", "Myelin or Develop", "Expansion", "Lesion")
 rownames(result.comat) <- c("Cyst", "Leukomalacia", "Hemorrhage", "Myelin or Develop", "Expansion", "Lesion")
 
-library(circlize)
-library(gplots)
-pdf('results/cooccur.pdf', width=8, height=8, family="GB1")
-par(cex=1.7, font=1)
-set.seed(999)
+#library(circlize)
+#library(gplots)
+#pdf('results/cooccur.pdf', width=8, height=8, family="GB1")
+#par(cex=1.7, font=1)
+#set.seed(999)
 #chordDiagram(result.comat, transparency = 0.5, row.col=c('red', 'purple', 'blue', 'yellow', 'green', 'pink', 'orange'), grid.col=c('red', 'purple', 'blue', 'yellow', 'green', 'pink', 'orange')) # col=bluered(36),
 ## chordDiagram(result.comat, transparency = 0.5, row.col=c('red', 'purple', 'blue', 'yellow', 'green', 'pink'), grid.col=c('red', 'purple', 'blue', 'yellow', 'green', 'pink')) # col=bluered(36),
+#dev.off()
+
+# we need more direct way of showing all data labels
+install.packages('corrplot')
+library(corrplot)
+
+system("mkdir -p results")
+pdf('results/Figure1.pdf')
+corrplot(as.matrix(result.comat), add=F, method='number',
+         col=colorRampPalette(c("white", "blue"))(20), cl.pos='n',
+        is.corr = F, type='lower')
 dev.off()
 
-#write.table(bids, file='results/bids_ready_datasets_annotation.xls', sep='\t', quote=F)
-#
 labelmat <- function(labels, r) {
    mat <- matrix(0, nrow=length(r), ncol=length(labels))
    n=1
@@ -123,16 +128,13 @@ labelmat <- function(labels, r) {
    mat
 }
 
-niisall <- niis[rowSums(!is.na(niis))>=5,]
-reportsall <- reports[rowSums(!is.na(niis))>=5]
-labelsall <- labelmat(labelsi, reportsall)
-platform <- bids[rowSums(!is.na(niis))>=5, 11]
-print(dim(niisall))
+labelsall <- labelmat(labelsi, reports)
+colnames(labelsall) <- c("Cyst", "Leukomalacia", "Hemorrhage", "Myelin or Develop", "Expansion", "Lesion")
 
-colnames(labelsall) <- labelsi
 apply(labelsall, 2, table)
 
-### df <- cbind(niisall, reportsall, labelsall)
-#df <- cbind(id=1:nrow(niisall), platform=platform, niisall, labelsall)
-#print(dim(df))
-#write.table(df, file="results/data_for_model.xls", quote=F, sep="\t")
+final <- bids[,c(7,10,11,12,14:18)]
+final <- cbind(final, labelsall)
+
+colnames(final)[1:4] <- c('age', 'machine', 'platform', 'tesla')
+write.table(final, file='results/bids_ready_datasets_annotation.xls', sep='\t', quote=F)

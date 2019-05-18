@@ -14,7 +14,7 @@ from mxnet import autograd
 from tqdm import tqdm
 import logging
 
-from model import Vgg3d
+from mxmodel import Vgg3d
 from transform import get_crop, elastic_transform
 import os
 mx.random.seed(999)
