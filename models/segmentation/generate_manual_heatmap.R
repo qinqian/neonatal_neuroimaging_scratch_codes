@@ -37,7 +37,6 @@ for (i in df$cleaned_file_id) {
     qmask.list[[n]] <- Sys.glob(paste0('../phaseA_exploration/remodel_mxnet/mask/all/qq_labels/1-3/', i, '.nii.gz'))
 }
 
-
 #registerDoMC(20)
 chen <- foreach(i=1:length(cmask.list)) %do% {
     mask <- antsImageRead(cmask.list[[i]])

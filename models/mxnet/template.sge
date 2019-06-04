@@ -1,0 +1,5 @@
+#!/bin/bash
+#$ -V
+#$ -S /bin/bash
+export TMPDIR=/data1/qinqian/MRI/01_PVL_AI/remodel_mxnet/tmp
+export PYTHONPATH=/data1/qinqian/MRI/01_PVL_AI/remodel_mxnet:${PYTHONPATH}

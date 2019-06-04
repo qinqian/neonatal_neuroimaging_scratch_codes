@@ -111,6 +111,7 @@ cooccurence.mat <- function(symptom) {
 
 #labelsi <- c("囊", "软化", "出血|积血", "血肿", "髓鞘|发育", "扩张", "损伤")
 labelsi <- c("囊", "软化", "出血|积血", "髓鞘|发育", "扩张", "损伤")
+
 ## labelsi <- c("Cyst", "Leukomalacia", "Hemorrhage", "Myelin or Develop", "Expansion", "Lesion")
 result.comat <- cooccurence.mat(labelsi)
 
@@ -150,18 +151,46 @@ labelmat <- function(labels, r) {
 }
 
 labelsall <- labelmat(labelsi, reports)
-colnames(labelsall) <- c("Cyst", "Leukomalacia", "Hemorrhage", "Myelin or Develop", "Expansion", "Lesion")
+
+colnames(labelsall) <- c("Cyst", "Leukomalacia", "Hemorrhage", "Myelin_or_Develop", "Expansion", "Lesion")
 
 apply(labelsall, 2, table)
 
-final <- bids[,c(7,10,11,12,14:20)]
+final <- bids[,c(4,7,10,11,12,14:20)]
 final <- cbind(final, labelsall)
 
-colnames(final)[1:4] <- c('age', 'machine', 'platform', 'tesla')
+colnames(final)[1:5] <- c('ID', 'age', 'machine', 'platform', 'tesla')
 
 pdf('results/Figure1_version2.pdf', width=10, height=5.5)
-upset_plot = upset(subset(final, age<=8), sets=c("Cyst", "Leukomalacia", "Hemorrhage", "Myelin or Develop", "Expansion", "Lesion"), sets.bar.color = "#56B4E9", order.by = "freq", empty.intersections = "on", text.scale=1.5)
+upset_plot = upset(subset(final, age<=8), 
+                   sets=c("Cyst", "Leukomalacia", "Hemorrhage", "Myelin_or_Develop", "Expansion", "Lesion"), 
+                   sets.bar.color = "#56B4E9", order.by = "freq", empty.intersections = "on", text.scale=1.5)
 print(upset_plot)
 dev.off()
 
 write.table(final, file='results/bids_ready_datasets_annotation.xls', sep='\t', quote=F)
+
+# Part 2
+# PVL lesion loci 
+library(gdata)
+pvl_delineated = read.xls('../../../clinical/final_pvl_with_mask_with_control.xlsx')
+## pvl <- with(pvl_delineated, group.1=='pvl'&LABELED=='1-3')
+## ids = as.vector(pvl_delineated$cleaned_file_id)
+## ids = ids!='#N/A' & (!is.na(ids)) & pvl
+
+pvl.ga <- pvl_delineated[match(final$ID, pvl_delineated[,2]), 11]
+pvl.ga <- as.numeric(as.vector(pvl.ga))
+
+pvl.birth <- pvl_delineated[match(final$ID, pvl_delineated[,2]), 9]
+pvl.birth <- as.vector(pvl.birth)
+pvl.birth[grep("顺", pvl.birth)] = 1
+pvl.birth[(pvl.birth != "1") & (!is.na(pvl.birth))] = 0
+
+pvl.weig <- pvl_delineated[match(final$ID, pvl_delineated[,2]), 11]
+pvl.weig <- as.numeric(as.vector(pvl.weig))
+
+pvl.head <- pvl_delineated[match(final$ID, pvl_delineated[,2]), 12]
+pvl.head <- as.numeric(as.vector(pvl.head))
+
+pvl.draw <- pvl.draw[!is.na(pvl.draw$clean_file_id), ]
+dim(pvl_delineate_ones)

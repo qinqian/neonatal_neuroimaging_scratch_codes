@@ -1,0 +1,11 @@
+#!/bin/bash -ex
+
+#PBS -l nodes=1:ppn=1
+#PBS -N preprocess
+#PBS -q q1
+#PBS -l walltime=20:00:00
+
+cd $PBS_O_WORKDIR
+n=${PBS_ARRAYID}
+
+python preprocess_with_casetemplate.py --bids results/bids_head1.csv --inputid $1

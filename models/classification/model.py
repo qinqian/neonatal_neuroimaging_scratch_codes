@@ -104,4 +104,4 @@ def resnext(shape):
     return model
 
 if __name__ == '__main__':
-    print(inception_v3((80,80,60,5), 2).summary())
+    print(inception_v3((87, 87, 112 ,5), 2).summary())
