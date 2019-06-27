@@ -29,6 +29,7 @@ def get_paramters():
     parser.add_argument("-lr", required=True, default=0.0001, type=float)
     parser.add_argument("-drop", required=True, default=0.5, type=float)
     parser.add_argument("-batch", required=True, default=8, type=int)
+    parser.add_argument("-seed", default=1, type=int)
 
     parser.add_argument("-epoch", required=True, default=50, type=int)
     parser.add_argument("-gpu", default="0")
@@ -113,20 +114,19 @@ def train_valid(model, train_loader, valid_loader, optimizer, epoch, device, los
         prev_valid_loss = valid_loss
         prev_valid_acc = valid_acc
 
-    # too much disk usage, only save the current best models
-    torch.save({'model': model.state_dict(),
-                'optimizer': optimizer.state_dict(),
-                'schedule': schedule.state_dict(),
-                'args': args,
-                'epoch': epoch+1},
-                '%s/params%s_dataiter_%s_currentlr_%s_validloss_%s_validacc_%s_train_loss_%s_train_acc_%s.ckpt' % (checkpoint, epoch+1, index+1, optimizer.param_groups[0]['lr'], round(valid_loss, 5), round(valid_acc, 5), round(train_loss, 5), round(train_acc, 5)))
-    schedule.step(valid_loss)
+        # too much disk usage, only save the current best models
+        torch.save({'model': model.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                    'schedule': schedule.state_dict(),
+                    'args': args,
+                    'epoch': epoch+1},
+                    '%s/params%s_dataiter_%s_currentlr_%s_validloss_%s_validacc_%s_train_loss_%s_train_acc_%s.ckpt' % (checkpoint, epoch+1, index+1, optimizer.param_groups[0]['lr'], round(valid_loss, 5), round(valid_acc, 5), round(train_loss, 5), round(train_acc, 5)))
 
+    schedule.step(valid_loss)
     return prev_valid_loss, prev_valid_acc
 
 
-def train_test_valid(bids, exclude, machine, modality, batch, symptom, pure_control=False):
-    seed = 1
+def train_test_valid(bids, exclude, machine, modality, batch, symptom, seed=1, pure_control=False):
     torch.backends.cudnn.benchmark = True
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
@@ -219,7 +219,7 @@ def main():
     # load data files
     modality = list(map(int, args.modality.split(',')))
     train_loader, valid_loader, test_loader = train_test_valid(args.bids, args.exclude, args.machine,
-                                                               modality, args.batch, args.symptom, True)
+                                                               modality, args.batch, args.symptom, args.seed, True)
 
     model = InceptionAttention3D(len(modality), args.drop).cuda()
     #model = torch.nn.DataParallel(model) # use multiple gpus

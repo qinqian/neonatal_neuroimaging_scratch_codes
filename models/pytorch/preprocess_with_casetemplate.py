@@ -21,7 +21,8 @@ def enhan_ants_image(ants_image, mask, clip_limit=0.015):
     imshape = im.shape
 
     immin = imdata.min()
-    imdata = (imdata - immin).astype(np.uint16)
+    #imdata = (imdata - immin).astype(np.uint16)
+    imdata = (imdata - immin)
 
     adapted = exposure.equalize_adapthist(
         denoise_wavelet(imdata.reshape(imshape[0], -1)), clip_limit=clip_limit)

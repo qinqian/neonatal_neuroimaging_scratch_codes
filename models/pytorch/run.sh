@@ -66,9 +66,9 @@ main() {
                    if [ $gpu_num -ge 3 ]; then
                        gpu_num=0
                    fi
-                   if [ ! -s results/${symptom}_modal${modality}_class_models_initiallr${lr}_batch${batch}_drop${drops}.logs ]; then
-                     echo "python main.py -modelpath results/models_${symptom}_pure -gpu $gpu_num -symptom $symptom -drop $drops -lr $lr -batch $batch -epoch 100 -bids results/bids_head1.csv -exclude check_datasets/bad_ids_thrown_ids_for_antspy2.txt -modality $modality 2>&1>results/${symptom}_modal${modality}_class_models_initiallr${lr}_batch${batch}_drop${drops}.logs" >> ${symptom}_more_combination_class_training_valid_gpu${gpu_num}.commands
-                   fi
+                   #if [ ! -s results/${symptom}_modal${modality}_class_models_initiallr${lr}_batch${batch}_drop${drops}.logs ]; then
+                   echo "python main.py -modelpath results/models_${symptom}_pure -gpu $gpu_num -symptom $symptom -drop $drops -lr $lr -batch $batch -epoch 100 -bids results/bids_head1.csv -exclude check_datasets/bad_ids_thrown_ids_for_antspy2.txt -modality $modality 2>&1>results/${symptom}_modal${modality}_class_models_initiallr${lr}_batch${batch}_drop${drops}.logs" >> ${symptom}_more_combination_class_training_valid_gpu${gpu_num}.commands
+                   #fi
                    let gpu_num++
                done
            done
