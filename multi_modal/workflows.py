@@ -1,5 +1,4 @@
 import os
-
 from nipype import IdentityInterface, Function, Select
 from nipype.interfaces.ants import DenoiseImage
 from nipype.pipeline.engine import Node, MapNode, Workflow

@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+"""
+warp three atlas into the native space
+output: three warped label image with 
+        three corresponding transformation nii.gz
+"""
+
 import matplotlib
 matplotlib.use('Agg')
 from skimage import measure

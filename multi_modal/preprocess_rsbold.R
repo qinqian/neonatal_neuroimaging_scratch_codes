@@ -56,6 +56,8 @@ if (sum(fd>=0.5)>0) {
 }
 
 bold.reg <- antsRegistration(b0, boldmean, typeofTransform="SyNBoldAff", outprefix=args$output)
+#bold.reg <- antsRegistration(b0, boldmean, typeofTransform="Rigid", outprefix=args$output)
+
 seg.bold <- antsApplyTransforms(boldmean, seg, transformlist=bold.reg[['invtransforms']], interpolator="nearestNeighbor")
 csf.bold <- thresholdImage(thresholdImage(seg.bold, 5, 5) + thresholdImage(seg.bold, 1, 1), 1, 2)
 #wm.bold  <- thresholdImage(thresholdImage(seg.bold, 3, 3) + thresholdImage(seg.bold, 8, 8) + thresholdImage(seg.bold, 9, 9), 1, 3)

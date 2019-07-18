@@ -26,9 +26,12 @@ quality <- cbind(my.quality[match(all.images$ID, my.quality$id), 2:3],
                 BOLD_quality=as.numeric(all.images$ID %in% yan.bolds))
 all.images <- cbind(all.images, quality)
 
-raw.bayley <- read.xls('../../Annotations/patient_information/Bayley III follow-up_2018.9.5.xlsx')
+library(gdata)
+## raw.bayley <- read.xls('../../Annotations/patient_information/Bayley III follow-up_2018.9.5.xlsx')
+raw.bayley <- read.xls('Bayley III follow-up_2019.7.2_corrected.xlsx')
 bayley.score <- raw.bayley[match(all.images$V4, raw.bayley[, 2]), 3:12]
 colnames(bayley.score) <- c('Cognitive_12m', 'Fine Motor_12m', 'Gross Motor_12m', 'Receptive Communication_12m', 'Expressive Communication_12m', 'Cognitive_18m', 'Fine Motor_18m', 'Gross Motor_18m', 'Receptive Communication_18m', 'Expressive Communication_18m')
+
 all.images <- cbind(all.images, bayley.score)
 
 baep <- read.xls('../../Annotations/patient_information/BEAP.xlsx', sheet=4)
@@ -91,4 +94,5 @@ final$bw <- gsub('g|克', '', final$bw)
 final$bw[final$bw==""] = NA
 final$bw[final$bw=="."] = NA
 final$bw = as.numeric(final$bw)
+
 write.table(final, 'kai_2017_dti_t1_bold_to_be_processed.xls', quote=F, sep='\t')
