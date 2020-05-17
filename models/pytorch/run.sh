@@ -48,7 +48,6 @@ main() {
    # optimal learning rate lr_test.pdf 0.0001625 
    # python main.py -modelpath results/learning_rate/ -endlr 0.000175 -findlr -gpu 0 -symptom Hemorrhage -drop 0 -lr 0.00015 -batch 32 -epoch 100 -bids results/bids_head1.csv -exclude check_datasets/bad_ids_thrown_ids_for_antspy2.txt -modality 0,1,2,3,4
 
-
    rm -f *_more_combination_class_training_valid_gpu*
    gpu_num=0
    #for symptom in Leukomalacia Hemorrhage Expansion Lesion Cyst Myelin_or_Develop; do
@@ -91,6 +90,7 @@ main() {
    #done
 
    # test and visualize by jupyter notebook
+   python main.py -resume -modelpath results/models_Leukomalacia_seed1_pure -gpu 0 -symptom Leukomalacia -drop 0.5 -lr 0.00017 -batch 32 -epoch 100 -bids results/bids_head1.csv -exclude check_datasets/bad_ids_thrown_ids_for_antspy2.txt -modality 0
 }
 
 main

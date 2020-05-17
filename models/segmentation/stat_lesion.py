@@ -25,4 +25,3 @@ print(np.std(slice_num))
 
 #print(lesions.shape)
 #print(np.mean(lesions))
-

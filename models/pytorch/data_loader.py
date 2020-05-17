@@ -84,7 +84,7 @@ class NiftyLoader(data.Dataset):
                           f"results/processed/{row_index}_t1_processed.nii.gz",  # T1
                           f"results/processed/{row_index}_t1s_processed.nii.gz"]  # T1s
         all_modalities = [all_modalities[m] for m in self.modalities]
-        image = [((ants.image_read(m).numpy()-IMAGES_MEAN_SD[stat][0])/IMAGES_MEAN_SD[stat][1])*self.mask
+        image = [((ants.image_read(m).numpy()-IMAGES_MEAN_SD[stat][0])/IMAGES_MEAN_SD[stat][1])  ### *self.mask, ants mask is weird sometimes, 
                  for m, stat in zip(all_modalities, self.modalities)]
         image = np.stack(image, axis=0)
         label = self.bids.iloc[index, :].loc[self.symptom].astype('float32')

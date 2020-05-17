@@ -19,12 +19,12 @@ from unet import densenet_unet, edd_net
 from tensorflow.keras.preprocessing.image import img_to_array, load_img, ImageDataGenerator
 from tensorflow.python.keras.utils import multi_gpu_model, Sequence
 import tensorflow as tf
-import imgaug
+#import imgaug
 import pandas as pd
 from glob import glob
 from tqdm import tqdm
 from tensorflow.python.client import device_lib
-from transforms import aug_mega_hardcore
+#from transforms import aug_mega_hardcore
 from skimage import measure
 from prediction_valid import predict_whole_brain, dice_ratio
 from losses import double_head_loss, sigmoid_dice_loss, hard_dice_coef, hard_dice_coef_ch1, dice_coef_loss, focal_loss, binary_crossentropy, pixwise_crossentropy
@@ -274,8 +274,8 @@ def main():
 
     np.random.seed(int(args.seed))
     random.seed(int(args.seed))
-    tf.random.set_seed(int(args.seed))
-    #tf.set_random_seed(int(args.seed))
+    #tf.random.set_seed(int(args.seed))
+    tf.set_random_seed(int(args.seed))
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 

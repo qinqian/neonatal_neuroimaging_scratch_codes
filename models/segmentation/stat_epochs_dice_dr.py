@@ -8,11 +8,11 @@ def plot_stat(model, seed, loss, patch):
     for i in ['train', 'valid', 'test']:
         es, ds, rs = [], [], []
         #for j in glob.glob('%s_%s%s%s_*' % (loss, i, model, seed)):
-        print(i)
-        for j in glob.glob('%s%s%s%s_*_%s_*' % (loss, i, model, seed, patch)):
-            #print(j)
-            e = int(j.split('_')[7].replace('epoch',''))
-            #e = int(j.split('_')[6].replace('epoch',''))
+        print('process/npy/%s*_%s%s%s_*_%s*npy' % (loss, i, model, seed, patch))
+        for j in glob.glob('process/npy/%s*%s%s%s*_%s*npy' % (loss, i, model, seed, patch)):
+            print(j)
+            e = int(j.split('_')[8].replace('epoch',''))
+            ##e = int(j.split('_')[6].replace('epoch',''))
             es.append(e)
             metric = np.load(j)
             ds.append(np.mean(metric))
@@ -31,3 +31,4 @@ df = plot_stat('_edd_', '999', 'bce_', 64)
 df.to_csv('64_999_patch.csv')
 #plot_stat('_edd_', '999', 'bce_', 96)
 #plot_stat('_edd_', '999', '')
+

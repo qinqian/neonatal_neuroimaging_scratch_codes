@@ -96,6 +96,6 @@ class InceptionAttention3D(nn.Module):
 #        images_features = self.inceptions(images)
 
 if __name__ == "__main__":
-    model = InceptionAttention3D(1).cuda()
+    model = InceptionAttention3D(3).cuda()
     #model = Inception(5, 64, (96,  128), (16, 32),  32).cuda()
-    print(summary(model, (1, 87, 112, 93), batch_size=24))
+    print(summary(model, (3, 87, 112, 93), batch_size=1))

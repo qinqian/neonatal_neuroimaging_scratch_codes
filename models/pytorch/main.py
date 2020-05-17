@@ -35,6 +35,7 @@ def get_paramters():
     parser.add_argument("-gpu", default="0")
     parser.add_argument("-resume", action="store_true")
     parser.add_argument("-findlr", action="store_true")
+    parser.add_argument("-classify", action="store_true")
     parser.add_argument("-endlr", type=float, help='only useful for find learning rate')
     parser.add_argument("-bids", required=True, default="results/bids_head1.csv", type=str)
     parser.add_argument("-modelpath", required=True, default="", type=str, help='model store root path')
@@ -103,7 +104,7 @@ def train_valid(model, train_loader, valid_loader, optimizer, epoch, device, los
         _, pred = torch.max(output, 1)
         training_acc += (pred == train_label_data[:, 1].long()).sum().item()
         total += train_label_data.size(0)
-        train_acc, train_loss = training_acc/total, training_loss/total
+        train_acc, train_loss = training_acc/total, training_loss/total   ## training_loss should divide batch size here instaead of total samples, multiply batch size back later..
         if (index+1)%10 == 0:
             print('[%d, %5d] train loss: %.4f, acc: %.4f, lr:%.9f' % (epoch+1, index+1, training_loss/total, training_acc/total, optimizer.param_groups[0]['lr']))
 
@@ -207,6 +208,7 @@ def custom_load_checkpoint(path):
     metrics_all.sort_values('validloss', inplace=True)
     return metrics_all
 
+
 def main():
     """ main interface"""
 
@@ -216,68 +218,69 @@ def main():
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    # load data files
-    modality = list(map(int, args.modality.split(',')))
-    train_loader, valid_loader, test_loader = train_test_valid(args.bids, args.exclude, args.machine,
-                                                               modality, args.batch, args.symptom, args.seed, True)
+    if args.classify:
+        # load data files
+        modality = list(map(int, args.modality.split(',')))
+        train_loader, valid_loader, test_loader = train_test_valid(args.bids, args.exclude, args.machine,
+                                                                   modality, args.batch, args.symptom, args.seed, True)
 
-    model = InceptionAttention3D(len(modality), args.drop).cuda()
-    #model = torch.nn.DataParallel(model) # use multiple gpus
+        model = InceptionAttention3D(len(modality), args.drop).cuda()
+        #model = torch.nn.DataParallel(model) # use multiple gpus
 
-    loss = torch.nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4) # for PVL 1e-4 l2 is enough with lr 0.00017
+        loss = torch.nn.BCEWithLogitsLoss()  ## BCEWithLogitsLoss and BCELoss already divide batch size
+        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4) # for PVL 1e-4 l2 is enough with lr 0.00017
 
-    if args.findlr:
-        lr_finder = LRFinder(model, optimizer, loss, device="cuda")
-        lr_finder.range_test(train_loader, end_lr=args.endlr, num_iter=200, step_mode='exp')
-        lr_finder.plot(log_lr=False)
-        plt.savefig('%s/%s_lr_test%s_%s.pdf' % (args.modelpath, args.symptom, args.lr, args.endlr))
-        sys.exit(0)
+        if args.findlr:
+            lr_finder = LRFinder(model, optimizer, loss, device="cuda")
+            lr_finder.range_test(train_loader, end_lr=args.endlr, num_iter=200, step_mode='exp')
+            lr_finder.plot(log_lr=False)
+            plt.savefig('%s/%s_lr_test%s_%s.pdf' % (args.modelpath, args.symptom, args.lr, args.endlr))
+            sys.exit(0)
 
-    checkpoint = '%s/%s_modal%s_class_models_initiallr%.6f_batch%s_drop%s' % (args.modelpath, args.symptom, args.modality, float(args.lr), args.batch, args.drop)
-    if os.path.exists(checkpoint) and args.resume:
+        checkpoint = '%s/%s_modal%s_class_models_initiallr%.6f_batch%s_drop%s' % (args.modelpath, args.symptom, args.modality, float(args.lr), args.batch, args.drop)
+        if os.path.exists(checkpoint) and args.resume:
+            metrics_all = custom_load_checkpoint(checkpoint)
+            print(metrics_all.iloc[0, :].loc['path'])
+            params = torch.load(metrics_all.iloc[0, :].loc['path'])
+            print(params.keys())
+            model.load_state_dict(params['model'])
+            print('resume....')
+            test_acc, test_loss, test_predict, test_outputs, test_labels = test(model, test_loader, device, loss, True)
+            print(test_acc, test_loss)
+            print(np.vstack([test_predict, test_outputs, test_labels]).T.shape)
+            output_test = pd.DataFrame(np.vstack([test_predict, test_outputs, test_labels]).T, columns=['predict', 'outputs', 'labels'])
+            output_test.to_csv(f'{checkpoint}_test_resume.csv')
+            sys.exit(0)
+        else:
+            init_weights(model, init_type='kaiming')
+
+        os.system('mkdir -p %s' % checkpoint)
+
+        #scheduler = lr_scheduler.StepLR(optimizer,
+        #                                step_size=10, gamma=0.3333)
+        #scheduler = lr_scheduler.CosineAnnealingLR(optimizer,
+        #                                           10, eta_min=1e-6) # PVL
+        scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.3333, patience=5)
+
+        valid_loss = np.inf
+        valid_acc = 0.0
+        for epoch in range(args.epoch):
+            valid_loss, valid_acc = train_valid(model, train_loader, valid_loader,
+                                     optimizer, epoch, device, loss, args,
+                                     scheduler, valid_loss, valid_acc, checkpoint)
+        end = time.time()
+        print(end)
+        print(end - start)
+
+        # load best checkpoints
         metrics_all = custom_load_checkpoint(checkpoint)
-        print(metrics_all.iloc[0, :].loc['path'])
-        params = torch.load(metrics_all.iloc[0, :].loc['path'])
-        print(params.keys())
-        model.load_state_dict(params['model'])
-        print('resume....')
+        model.load_state_dict(torch.load(metrics_all.iloc[0, :].loc['path'])['model'])
         test_acc, test_loss, test_predict, test_outputs, test_labels = test(model, test_loader, device, loss, True)
         print(test_acc, test_loss)
         print(np.vstack([test_predict, test_outputs, test_labels]).T.shape)
         output_test = pd.DataFrame(np.vstack([test_predict, test_outputs, test_labels]).T, columns=['predict', 'outputs', 'labels'])
-        output_test.to_csv(f'{checkpoint}_test_resume.csv')
-        sys.exit(0)
-    else:
-        init_weights(model, init_type='kaiming')
-
-    os.system('mkdir -p %s' % checkpoint)
-     
-    #scheduler = lr_scheduler.StepLR(optimizer,
-    #                                step_size=10, gamma=0.3333)
-    #scheduler = lr_scheduler.CosineAnnealingLR(optimizer,
-    #                                           10, eta_min=1e-6) # PVL
-    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.3333, patience=5)
-
-    valid_loss = np.inf
-    valid_acc = 0.0
-    for epoch in range(args.epoch):
-        valid_loss, valid_acc = train_valid(model, train_loader, valid_loader,
-                                 optimizer, epoch, device, loss, args,
-                                 scheduler, valid_loss, valid_acc, checkpoint)
-    end = time.time()
-    print(end)
-    print(end - start)
-
-    # load best checkpoints
-    metrics_all = custom_load_checkpoint(checkpoint)
-    model.load_state_dict(torch.load(metrics_all.iloc[0, :].loc['path'])['model'])
-    test_acc, test_loss, test_predict, test_outputs, test_labels = test(model, test_loader, device, loss, True)
-    print(test_acc, test_loss)
-    print(np.vstack([test_predict, test_outputs, test_labels]).T.shape)
-    output_test = pd.DataFrame(np.vstack([test_predict, test_outputs, test_labels]).T, columns=['predict', 'outputs', 'labels'])
-    output_test.to_csv(f'{checkpoint}_test.csv')
-    metrics_all.to_csv(f'{checkpoint}_valid.csv')
+        output_test.to_csv(f'{checkpoint}_test.csv')
+        metrics_all.to_csv(f'{checkpoint}_valid.csv')
 
 
 if __name__ == '__main__':
